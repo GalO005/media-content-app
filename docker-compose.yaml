@@ -1,0 +1,30 @@
+services:
+
+  node-api:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.node
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./server:/server
+      - /server/node_modules
+    networks:
+      - app-network
+  
+  react-app:
+    build:
+      context: ./client
+      dockerfile: Dockerfile.react
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    depends_on:
+      - node-api
+  
+  
+networks:
+  app-network:
+    driver: bridge
