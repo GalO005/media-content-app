@@ -19,7 +19,7 @@ export async function bootstrap() {
     server.listen(process.env.PORT, () => {
         console.log(`Server is running on http://localhost:${process.env.PORT}`);
       });
-    //   console.log(await esService.retrieveAllMediaWithPit())
+    //console.log(await esService.retrieveAllMediaWithPit())
     
   } catch (error) {
     console.error('Application failed to start:', error)
