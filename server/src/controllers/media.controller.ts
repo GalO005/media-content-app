@@ -111,8 +111,14 @@ export class MediaController {
         // Calculate if there are more results
         const hasMore = result.items.length === limit && result.total > result.items.length;
 
+        // Map the items to include the URLs
+        const itemsWithUrls = result.items.map((item, index) => ({
+          ...item,
+          url: result.urls[index] || null
+        }));
+
         res.json({
-          items: result.items,
+          items: itemsWithUrls,
           total: result.total,
           page: currentPage,
           hasMore: hasMore,
@@ -154,8 +160,14 @@ export class MediaController {
 
           const hasMore = result.items.length === limit && result.total > result.items.length;
 
+          // Map the items to include the URLs
+          const itemsWithUrls = result.items.map((item, index) => ({
+            ...item,
+            url: result.urls[index] || null
+          }));
+
           res.json({
-            items: result.items,
+            items: itemsWithUrls,
             total: result.total,
             page: currentPage,
             hasMore: hasMore,
@@ -206,69 +218,6 @@ export class MediaController {
       res.status(500).json({
         error: 'Failed to delete PIT',
         message: (error as Error).message
-      });
-    }
-  };
-
-  public testTotal = async (req: Request, res: Response): Promise<void> => {
-    try {
-      // Create a PIT
-      const pitId = await this.esService.createPit();
-
-      // Perform a simple search with no filters
-      const result = await this.esService.searchWithPit(
-        pitId,
-        10, // Small size to make it faster
-        undefined,
-        '',
-        undefined
-      );
-
-      // Return detailed information about the total
-      res.json({
-        rawTotal: result.total,
-        itemsCount: result.items.length,
-        pitId: result.pitId,
-        message: 'This is a test endpoint to check the total count calculation'
-      });
-
-      // Clean up the PIT
-      await this.esService.deletePit(pitId);
-    } catch (error) {
-      console.error('Test total error:', error);
-      res.status(500).json({
-        error: 'Test failed',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  };
-
-  public debugPitCache = async (req: Request, res: Response): Promise<void> => {
-    try {
-      // Return the current state of the PIT cache
-      const now = Date.now();
-
-      // Use Object.keys and map to avoid Object.entries which might not be available
-      const cacheInfo = Object.keys(this.pitCache).map(key => {
-        const value = this.pitCache[key];
-        return {
-          query: key,
-          pitId: value.pitId,
-          age: Math.round((now - value.timestamp) / 1000) + ' seconds',
-          expired: (now - value.timestamp) >= this.PIT_EXPIRATION
-        };
-      });
-
-      res.json({
-        cacheSize: Object.keys(this.pitCache).length,
-        expiration: this.PIT_EXPIRATION / 1000 + ' seconds',
-        cache: cacheInfo
-      });
-    } catch (error) {
-      console.error('Debug PIT cache error:', error);
-      res.status(500).json({
-        error: 'Debug failed',
-        message: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   };

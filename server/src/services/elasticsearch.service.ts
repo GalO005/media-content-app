@@ -62,6 +62,9 @@ class ElasticsearchService {
     while (paddedId.length < 10) {
       paddedId = '0' + paddedId;
     }
+
+    // Format the URL according to the production requirements
+    // Using the correct path structure for the CDN
     return `${BASE_URL}/bild/${type}/${paddedId}/s.jpg`;
   }
 
