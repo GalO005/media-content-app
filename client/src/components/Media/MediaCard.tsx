@@ -17,9 +17,18 @@ export const MediaCard: React.FC<MediaCardProps> = ({ item, onSelect }) => {
   // Handle missing URL by using a placeholder
   const imageUrl = item.url || "https://placehold.co/600x400?text=No+Image";
 
-  // Extract title and description from item
-  const title = item.title || item.bildnummer || "Untitled";
+  // Extract display text from item
+  const displayTitle = item.bildnummer || "Untitled";
   const description = item.description || item.suchtext || "";
+
+  // Format the date if available
+  const formattedDate = item.datum
+    ? new Date(item.datum).toLocaleDateString()
+    : "";
+
+  // Get dimensions if available
+  const dimensions =
+    item.breite && item.hoehe ? `${item.breite} × ${item.hoehe}` : "";
 
   return (
     <Card
@@ -30,7 +39,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({ item, onSelect }) => {
         <AspectRatio ratio={16 / 9}>
           <img
             src={imageUrl}
-            alt={title}
+            alt={displayTitle}
             className="object-cover w-full h-full"
             loading="lazy"
             onError={(e) => {
@@ -42,17 +51,32 @@ export const MediaCard: React.FC<MediaCardProps> = ({ item, onSelect }) => {
         </AspectRatio>
       </CardHeader>
       <CardContent className="p-4">
-        <h3 className="font-semibold text-lg truncate">{title}</h3>
+        <div className="flex justify-between items-start mb-1">
+          <h3 className="font-semibold text-lg truncate">{displayTitle}</h3>
+          {dimensions && (
+            <span className="text-xs text-muted-foreground bg-gray-100 px-2 py-1 rounded">
+              {dimensions}
+            </span>
+          )}
+        </div>
         {description && (
           <p className="text-sm text-muted-foreground line-clamp-2">
             {description}
           </p>
         )}
+        {item.fotografen && (
+          <p className="text-xs text-muted-foreground mt-1">
+            <span className="font-medium">Photographer:</span> {item.fotografen}
+          </p>
+        )}
       </CardContent>
-      <CardFooter className="p-4 pt-0">
+      <CardFooter className="p-4 pt-0 flex justify-between items-center">
         <span className="text-xs text-muted-foreground">
           {item.type ? `Type: ${item.type.toUpperCase()}` : item.db || ""}
         </span>
+        {formattedDate && (
+          <span className="text-xs text-muted-foreground">{formattedDate}</span>
+        )}
       </CardFooter>
     </Card>
   );

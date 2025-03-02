@@ -30,7 +30,6 @@ const getPitIdFromStorage = (query: string): string | null => {
     const expirationTime = 4 * 60 * 1000; // 4 minutes
 
     if (now - timestamp > expirationTime) {
-      // PIT ID is expired, remove it from storage
       localStorage.removeItem(storageKey);
       return null;
     }
@@ -78,7 +77,6 @@ export const useMediaSearch = (params: SearchParams) => {
   useEffect(() => {
     const storedPitId = getPitIdFromStorage(params.query || '');
     if (storedPitId) {
-      console.log('Retrieved PIT ID from localStorage:', storedPitId);
       firstPagePitIdRef.current = storedPitId;
     }
   }, []);
@@ -87,9 +85,6 @@ export const useMediaSearch = (params: SearchParams) => {
   useEffect(() => {
     const currentQuery = params.query || '';
     if (currentQuery !== previousQueryRef.current) {
-      console.log('Query changed from', previousQueryRef.current, 'to', currentQuery);
-      console.log('Resetting stored PIT ID:', firstPagePitIdRef.current);
-
       // Remove the old PIT ID from storage
       removePitIdFromStorage(previousQueryRef.current);
 
@@ -100,16 +95,10 @@ export const useMediaSearch = (params: SearchParams) => {
       // Check if there's a stored PIT ID for the new query
       const storedPitId = getPitIdFromStorage(currentQuery);
       if (storedPitId) {
-        console.log('Found stored PIT ID for new query:', storedPitId);
         firstPagePitIdRef.current = storedPitId;
       }
     }
   }, [params.query]);
-
-  // Log the current state of the PIT ID ref for debugging
-  useEffect(() => {
-    console.log('Current PIT ID state:', firstPagePitIdRef.current);
-  }, []);
 
   return useInfiniteQuery<SearchResponse>({
     queryKey,
@@ -132,7 +121,6 @@ export const useMediaSearch = (params: SearchParams) => {
 
         // If we have a stored PIT ID from a previous request, always use it
         if (firstPagePitIdRef.current) {
-          console.log('Using stored PIT ID for request:', firstPagePitIdRef.current);
           headers['x-pit-id'] = firstPagePitIdRef.current;
         }
 
@@ -184,7 +172,6 @@ export const useMediaSearch = (params: SearchParams) => {
           url += `?${urlParams}`;
         }
 
-        console.log('Fetching:', url, headers);
         const response = await fetch(url, { headers });
 
         if (!response.ok) {
@@ -194,13 +181,6 @@ export const useMediaSearch = (params: SearchParams) => {
         }
 
         const data = await response.json();
-        console.log('Search response:', {
-          total: data.total,
-          page: data.page,
-          hasMore: data.hasMore,
-          itemsCount: data.items?.length || 0,
-          metadata: data.metadata
-        });
 
         // Ensure the data has the expected structure
         if (!data.items) {
@@ -210,13 +190,11 @@ export const useMediaSearch = (params: SearchParams) => {
 
         // Check if the PIT was reset by the server
         if (data.metadata?.pitReset) {
-          console.log('Server reset the PIT, updating stored PIT ID');
           firstPagePitIdRef.current = data.metadata.pitId;
           savePitIdToStorage(queryValue, data.metadata.pitId);
         }
         // Store the PIT ID from the first page response
         else if (currentPage === 1 && data.metadata?.pitId) {
-          console.log('Storing PIT ID from first page:', data.metadata.pitId);
           firstPagePitIdRef.current = data.metadata.pitId;
           savePitIdToStorage(queryValue, data.metadata.pitId);
         }
@@ -227,7 +205,6 @@ export const useMediaSearch = (params: SearchParams) => {
 
         // If the error is PIT-related, reset the stored PIT ID
         if (isPitError(error)) {
-          console.log('PIT-related error detected, resetting stored PIT ID');
           firstPagePitIdRef.current = null;
           removePitIdFromStorage(queryValue);
         }
@@ -241,7 +218,6 @@ export const useMediaSearch = (params: SearchParams) => {
     getNextPageParam: (lastPage) => {
       // Check if there are more pages
       if (!lastPage.hasMore) {
-        console.log('No more pages to fetch (hasMore is false)');
         return undefined;
       }
 
@@ -258,22 +234,12 @@ export const useMediaSearch = (params: SearchParams) => {
         const nextPage = (lastPage.page || 1) + 1;
 
         // Return the pagination metadata for the next page
-        console.log('Next page params:', {
-          pitId: lastPage.metadata.pitId,
-          searchAfter: lastPage.metadata.searchAfter,
-          currentPage: lastPage.page,
-          nextPage: nextPage,
-          loadedItems: lastPage.items.length,
-          total: lastPage.total
-        });
-
         return {
           pitId: lastPage.metadata.pitId,
           searchAfter: lastPage.metadata.searchAfter,
           page: nextPage
         };
       } else {
-        console.log('All items loaded, no more pages to fetch');
         return undefined;
       }
     },

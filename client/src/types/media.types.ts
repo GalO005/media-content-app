@@ -2,7 +2,6 @@ export interface MediaItem {
   id?: string;
   bildnummer?: string;
   type?: 'st' | 'sp';
-  title?: string;
   description?: string;
   suchtext?: string;
   fotografen?: string;

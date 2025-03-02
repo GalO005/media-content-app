@@ -25,7 +25,6 @@ export function MediaGrid() {
     isFetchingNextPage,
     isError,
     error,
-    refetch,
   } = useMediaSearch(searchParams);
 
   // Flatten the pages of items into a single array
@@ -35,49 +34,25 @@ export function MediaGrid() {
   }, [data?.pages]);
 
   // Calculate total and current page information
-  // Get the total from the first page's response
   const totalItems = data?.pages?.[0]?.total || 0;
 
-  // Get the current page from the last page's response
-  // This will now correctly reflect the page number from the server
+  // Get the current page safely with proper null checks
   const currentPage =
-    data?.pages?.length > 0 ? data.pages[data.pages.length - 1]?.page || 1 : 1;
+    data?.pages && data.pages.length > 0
+      ? data.pages[data.pages.length - 1]?.page || 1
+      : 1;
 
-  // Count the total number of items loaded so far
   const loadedItems = items.length;
-
-  // Calculate the number of pages based on the total and limit
   const totalPages = Math.ceil(totalItems / searchParams.limit);
-
-  // Log pagination information for debugging
-  useEffect(() => {
-    if (data?.pages) {
-      console.log("Pagination info:", {
-        totalItems,
-        currentPage,
-        loadedItems,
-        pagesCount: data.pages.length,
-        firstPageTotal: data.pages[0]?.total,
-        lastPageNumber: data.pages[data.pages.length - 1]?.page,
-        allPages: data.pages.map((page) => ({
-          total: page.total,
-          page: page.page,
-        })),
-      });
-    }
-  }, [data?.pages, totalItems, currentPage, loadedItems]);
 
   // Fetch next page when the load more element comes into view
   useEffect(() => {
     if (inView && hasNextPage && !isFetchingNextPage) {
-      console.log("Loading next page...");
       fetchNextPage();
     }
   }, [inView, hasNextPage, fetchNextPage, isFetchingNextPage]);
 
   const handleSearch = (query: string) => {
-    console.log("Search query:", query);
-
     // Validate and clean the query
     const cleanedQuery = query.trim();
 
@@ -87,7 +62,6 @@ export function MediaGrid() {
       setSearchParams((prev) => {
         // Only update if the query has changed
         if (prev.query !== cleanedQuery) {
-          console.log("Updating search params with query:", cleanedQuery);
           return { ...prev, query: cleanedQuery };
         }
         return prev;
@@ -96,7 +70,6 @@ export function MediaGrid() {
   };
 
   if (isError) {
-    console.error("Error fetching media:", error);
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8 flex justify-center">
@@ -132,10 +105,8 @@ export function MediaGrid() {
       {items.length > 0 && (
         <div className="mb-4 text-center text-sm text-muted-foreground">
           {loadedItems >= totalItems
-            ? // If we've loaded all items, show a simpler message
-              `Showing all ${loadedItems} items`
-            : // Otherwise show the pagination info
-              `Showing ${loadedItems} of ${totalItems} items (Page ${currentPage} of ${
+            ? `Showing all ${loadedItems} items`
+            : `Showing ${loadedItems} of ${totalItems} items (Page ${currentPage} of ${
                 totalPages || "?"
               })`}
         </div>
@@ -152,7 +123,7 @@ export function MediaGrid() {
               <MediaCard
                 key={`${item.bildnummer || item.id}-${index}`}
                 item={item}
-                onSelect={(item) => console.log("Selected:", item)}
+                onSelect={(item) => {}}
               />
             ))}
           </div>
