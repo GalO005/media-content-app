@@ -11,7 +11,6 @@ interface MediaDocument {
   hoehe: string; // Height 
   breite: string; // Width
   db: string; // Database or source name
-  title?: string; // Title
   description?: string; // Description
 }
 
@@ -134,7 +133,6 @@ class ElasticsearchService {
         const queryLower = query.trim().toLowerCase();
         items = items.filter((item: MediaDocument) => {
           return (
-            (item.title && item.title.toLowerCase().includes(queryLower)) ||
             (item.suchtext && item.suchtext.toLowerCase().includes(queryLower)) ||
             (item.bildnummer && item.bildnummer.toLowerCase().includes(queryLower)) ||
             (item.fotografen && item.fotografen.toLowerCase().includes(queryLower)) ||
@@ -149,7 +147,10 @@ class ElasticsearchService {
         items = items.filter((item: MediaDocument) => item.db === type);
       }
 
-      const urls = items.filter((item: MediaDocument) => item.bildnummer).map((item: MediaDocument) => this.formatMediaUrl(item.bildnummer, item.db));
+      // Filter out items without bildnummer or db as they're required for URL generation
+      items = items.filter((item: MediaDocument) => item.bildnummer && item.db);
+
+      const urls = items.map((item: MediaDocument) => this.formatMediaUrl(item.bildnummer, item.db));
       const lastSort = response.hits.hits[response.hits.hits.length - 1]?.sort;
 
       // Calculate final total based on filtering
