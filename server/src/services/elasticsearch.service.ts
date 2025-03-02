@@ -1,5 +1,6 @@
 import { Client, estypes } from '@elastic/elasticsearch';
-import elasticsearchConfig from '../config/elasticsearch.config'
+import elasticsearchConfig from '../config/elasticsearch.config';
+import { elasticsearchTestConfig, testConfig, USE_REAL_SERVICES } from '../config/test.config';
 
 const BASE_URL = 'https://www.imago-images.de';
 
@@ -32,10 +33,21 @@ interface PitResult {
 class ElasticsearchService {
   private client!: Client;
   private static instance: ElasticsearchService;
-  private readonly INDEX_NAME = 'imago';
+  private readonly INDEX_NAME: string;
 
   private constructor() {
-    this.client = new Client(elasticsearchConfig)
+    // Check if we're in test mode and USE_REAL_SERVICES is true
+    const isTestMode = process.env.NODE_ENV === 'test';
+
+    if (isTestMode && USE_REAL_SERVICES) {
+      // Use test configuration for Elasticsearch in test mode with real services
+      this.client = new Client(elasticsearchTestConfig);
+      this.INDEX_NAME = testConfig.indexName;
+    } else {
+      // Use production configuration for normal operation
+      this.client = new Client(elasticsearchConfig);
+      this.INDEX_NAME = 'imago';
+    }
   }
 
   public static getInstance(): ElasticsearchService {

@@ -6,7 +6,12 @@
     "start": "ts-node src/index.ts",
     "dev": "nodemon src/index.ts",
     "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:docker": "docker compose exec node-api node scripts/wait-for-services.js",
+    "test:integration": "USE_REAL_SERVICES=true NODE_ENV=test vitest run",
+    "check:elasticsearch": "node scripts/wait-for-services.js"
   },
   "keywords": [],
   "author": "",
@@ -22,8 +27,12 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^22.13.7",
+    "@types/supertest": "^6.0.2",
+    "@vitest/ui": "^1.4.0",
     "nodemon": "^3.1.9",
+    "supertest": "^6.3.4",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "vitest": "^1.4.0"
   }
 }

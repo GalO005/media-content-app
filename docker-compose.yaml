@@ -1,5 +1,4 @@
 services:
-
   node-api:
     build:
       context: ./server
@@ -11,7 +10,10 @@ services:
       - /server/node_modules
     networks:
       - app-network
-  
+    environment:
+      - NODE_ENV=development
+      - ELASTICSEARCH_URL=${ELASTICSEARCH_URL:-http://localhost:9200}
+
   react-app:
     build:
       context: ./client
@@ -23,8 +25,13 @@ services:
       - /app/node_modules
     depends_on:
       - node-api
-  
-  
+    networks:
+      - app-network
+
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  esdata:
+    driver: local
