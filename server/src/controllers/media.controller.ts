@@ -37,18 +37,6 @@ export class MediaController {
       const page = parseInt(String(rawPage), 10) || 1;
       const limit = parseInt(String(rawLimit), 10) || 50;
 
-      console.log('Search request:', {
-        query,
-        page,
-        limit,
-        type,
-        headers: {
-          'x-pit-id': req.headers['x-pit-id'],
-          'x-search-after': req.headers['x-search-after'],
-          'x-current-page': req.headers['x-current-page']
-        }
-      });
-
       // Create a cache key based on the query and type
       const cacheKey = `${query}:${type || 'all'}`;
 
@@ -57,11 +45,7 @@ export class MediaController {
       let isNewPit = false;
 
       if (pitId) {
-        // Client provided a PIT ID, log it
-        console.log('Client provided PIT ID:', pitId);
-
-        // Update the cache with this PIT ID
-        // We'll handle invalid PITs during the search operation
+        // Client provided a PIT ID, update the cache
         this.pitCache[cacheKey] = {
           pitId,
           timestamp: Date.now()
@@ -73,11 +57,9 @@ export class MediaController {
 
         if (cachedPit && (now - cachedPit.timestamp) < this.PIT_EXPIRATION) {
           // Use the cached PIT ID if it's not expired
-          console.log('Using cached PIT ID for query:', cacheKey);
           pitId = cachedPit.pitId;
         } else {
           // Create a new PIT ID
-          console.log('Creating new PIT for query:', cacheKey);
           pitId = await this.esService.createPit();
           isNewPit = true;
 
@@ -105,20 +87,14 @@ export class MediaController {
       }
 
       // Get the current page from headers if available (for PIT pagination)
-      // This allows us to track the page number across PIT requests
       let currentPage = page;
       if (req.headers['x-current-page']) {
         const headerPage = parseInt(String(req.headers['x-current-page']), 10);
         if (!isNaN(headerPage)) {
           currentPage = headerPage;
         }
-      } else if (isNewPit) {
-        // If we created a new PIT and there's no current page header, we're on page 1
-        currentPage = 1;
-      } else if (pitId && !searchAfter) {
-        // If we have a PIT ID but no search_after and no current page header,
-        // this is likely the first request with a reused PIT, so set to page 1
-        console.log('PIT ID provided but no search_after or current page, assuming page 1');
+      } else if (isNewPit || (pitId && !searchAfter)) {
+        // If we created a new PIT or have a PIT ID but no search_after, we're on page 1
         currentPage = 1;
       }
 
@@ -133,19 +109,7 @@ export class MediaController {
         );
 
         // Calculate if there are more results
-        // If we have fewer items than the limit, there are definitely no more results
-        // If we have exactly the limit, there might be more results
         const hasMore = result.items.length === limit && result.total > result.items.length;
-
-        // Log the response data for debugging
-        console.log('Search response data:', {
-          itemsCount: result.items.length,
-          total: result.total,
-          page: currentPage,
-          hasMore,
-          pitId: result.pitId,
-          searchAfterLength: result.searchAfter ? result.searchAfter.length : 0
-        });
 
         res.json({
           items: result.items,
@@ -163,7 +127,6 @@ export class MediaController {
         if (error instanceof Error &&
           (error.message.includes('PIT not found') ||
             error.message.includes('No search context found'))) {
-          console.log('PIT expired, creating a new one');
 
           // Remove the expired PIT from cache
           delete this.pitCache[cacheKey];
@@ -211,18 +174,15 @@ export class MediaController {
     } catch (error) {
       console.error('Search error:', error);
 
-      // Provide detailed error information
+      // Provide error information without stack traces in production
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      const errorStack = error instanceof Error ? error.stack : '';
 
       res.status(500).json({
         error: 'Search failed',
-        message: errorMessage,
-        stack: errorStack
+        message: errorMessage
       });
     }
   };
-
 
   public createPit = async (req: Request, res: Response): Promise<void> => {
     try {
